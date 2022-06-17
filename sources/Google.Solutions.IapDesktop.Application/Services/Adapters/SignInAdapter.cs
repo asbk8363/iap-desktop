@@ -68,6 +68,9 @@ namespace Google.Solutions.IapDesktop.Application.Services.Adapters
 
         [JsonProperty("sub")]
         public string Subject { get; set; }
+
+        [JsonProperty("picture")]
+        public string Picture { get; set; }
     }
 
     public class SignInAdapter : ISignInAdapter
