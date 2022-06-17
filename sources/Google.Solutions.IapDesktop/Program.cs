@@ -247,6 +247,7 @@ namespace Google.Solutions.IapDesktop
             using (var profile = LoadProfileOrExit(this.commandLineOptions))
             {
                 persistenceLayer.AddSingleton(profile);
+                persistenceLayer.AddTransient<ISignInAvatarAdapter, SignInAvatarAdapter>();
 
                 var appSettingsRepository = new ApplicationSettingsRepository(
                     profile.SettingsKey.CreateSubKey("Application"),

@@ -17,7 +17,7 @@ namespace Google.Solutions.IapDesktop.Application.Services.Adapters
         /// <summary>
         /// Download avatar and resize it. Can return null.
         /// </summary>
-        Task<Image> TryGetAvatarAsync(
+        Task<Bitmap> TryGetAvatarAsync(
             UserInfo userInfo,
             Size size,
             CancellationToken cancellationToken);
@@ -60,7 +60,7 @@ namespace Google.Solutions.IapDesktop.Application.Services.Adapters
             }
         }
 
-        public async Task<Image> TryGetAvatarAsync(
+        public async Task<Bitmap> TryGetAvatarAsync(
             UserInfo userInfo,
             Size size,
             CancellationToken cancellationToken)

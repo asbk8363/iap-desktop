@@ -31,11 +31,13 @@ using Google.Solutions.IapDesktop.Application.Services.Integration;
 using Google.Solutions.IapDesktop.Application.Services.SecureConnect;
 using Google.Solutions.IapDesktop.Application.Services.Settings;
 using Google.Solutions.IapDesktop.Application.Views.Options;
+using Google.Solutions.IapDesktop.Interop;
 using Google.Solutions.IapTunneling.Iap;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -48,6 +50,7 @@ namespace Google.Solutions.IapDesktop.Windows
         private readonly DockPanelColorPalette colorPalette;
         private readonly AuthSettingsRepository authSettings;
         private readonly ApplicationSettingsRepository applicationSettings;
+        private readonly ISignInAvatarAdapter avatarAdapter;
         private readonly Profile profile;
 
         // NB. This list is only access from the UI thread, so no locking required.
@@ -66,17 +69,16 @@ namespace Google.Solutions.IapDesktop.Windows
             DockPanelColorPalette colorPalette,
             Profile profile,
             ApplicationSettingsRepository applicationSettings,
-            AuthSettingsRepository authSettings)
+            AuthSettingsRepository authSettings,
+            ISignInAvatarAdapter avatarAdapter)
         {
             this.View = view;
             this.colorPalette = colorPalette;
             
-            this.profile = profile
-                .ThrowIfNull(nameof(profile));
-            this.applicationSettings = applicationSettings
-                .ThrowIfNull(nameof(applicationSettings));
-            this.authSettings = authSettings
-                .ThrowIfNull(nameof(authSettings));
+            this.profile = profile.ThrowIfNull(nameof(profile));
+            this.applicationSettings = applicationSettings.ThrowIfNull(nameof(applicationSettings));
+            this.authSettings = authSettings.ThrowIfNull(nameof(authSettings));
+            this.avatarAdapter = avatarAdapter.ThrowIfNull(nameof(avatarAdapter));
         }
 
         //---------------------------------------------------------------------
@@ -260,6 +262,47 @@ namespace Google.Solutions.IapDesktop.Windows
 
             Debug.Assert(this.ProfileStateCaption != null);
             Debug.Assert(this.Authorization.DeviceEnrollment != null);
+
+            if (!profile.IsDefault)
+            {
+                //
+                // Show avatar of signed-in user in taskbar.
+                //
+                ShowAvatarOverlay(CancellationToken.None)
+                    .ContinueWith(_ => { });
+            }
+        }
+
+        private async Task ShowAvatarOverlay(CancellationToken cancellationToken)
+        {
+            using (var avatar = await this.avatarAdapter
+                .TryGetAvatarAsync(
+                    this.Authorization.UserInfo,
+                    new Size(16, 16),
+                    CancellationToken.None)
+                .ConfigureAwait(true))
+            {
+                if (avatar == null)
+                {
+                    return;
+                }
+
+                var taskbar = (ITaskbarList3)new TaskbarList();
+                try
+                {
+                    Debug.Assert(this.View != null);
+
+                    taskbar.HrInit();
+                    taskbar.SetOverlayIcon(
+                        this.View.Handle,
+                        avatar.GetHicon(),
+                        string.Empty);
+                }
+                finally
+                {
+                    Marshal.ReleaseComObject(taskbar);
+                }
+            }
         }
 
         public async Task ReauthorizeAsync(CancellationToken token)

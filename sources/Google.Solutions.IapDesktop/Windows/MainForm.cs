@@ -138,7 +138,8 @@ namespace Google.Solutions.IapDesktop.Windows
                 this.vs2015LightTheme.ColorPalette,
                 bootstrappingServiceProvider.GetService<Profile>(),
                 bootstrappingServiceProvider.GetService<ApplicationSettingsRepository>(),
-                bootstrappingServiceProvider.GetService<AuthSettingsRepository>());
+                bootstrappingServiceProvider.GetService<AuthSettingsRepository>(),
+                bootstrappingServiceProvider.GetService<ISignInAvatarAdapter>());
 
             this.BindProperty(
                 c => c.Text,
